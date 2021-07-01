@@ -1,0 +1,6 @@
+name: LootChests
+version: ${project.version}
+main: me.zxoir.lootchests.LootChests
+api-version: 1.16
+authors: [ Zxoir ]
+description: LootChests Plugin
