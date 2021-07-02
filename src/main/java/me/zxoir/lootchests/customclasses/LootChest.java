@@ -2,8 +2,8 @@ package me.zxoir.lootchests.customclasses;
 
 import lombok.Getter;
 import me.zxoir.lootchests.LootChests;
+import me.zxoir.lootchests.managers.LootChestManager;
 import org.bukkit.Location;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedList;
@@ -29,13 +29,26 @@ public class LootChest {
     @Getter
     int lootAmount;
     int totalWeight;
+    @Getter
+    private final int id;
 
     public LootChest(@NotNull Long interval, @NotNull LootChests.LootChestType type, int lootAmount) {
         this.interval = interval;
         this.type = type;
         this.lootAmount = lootAmount;
+        this.id = LootChestManager.getNewID();
         loots = new LinkedList<>();
         locations = new LinkedList<>();
+    }
+
+    public LootChest(@NotNull Long interval, @NotNull LootChests.LootChestType type, @NotNull LinkedList<Loot> loots, @NotNull LinkedList<Location> locations, int lootAmount, int totalWeight, int id) {
+        this.interval = interval;
+        this.type = type;
+        this.loots = loots;
+        this.locations = locations;
+        this.lootAmount = lootAmount;
+        this.totalWeight = totalWeight;
+        this.id = id;
     }
 
     public void addLoot(Loot loot, int chance){
