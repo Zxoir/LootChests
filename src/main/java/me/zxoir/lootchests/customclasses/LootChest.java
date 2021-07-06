@@ -52,9 +52,9 @@ public class LootChest {
         this.id = id;
     }
 
-    public void addLoot(Loot loot, int chance){
+    public void addLoot(Loot loot){
         loots.add(loot);
-        totalWeight += chance;
+        totalWeight += loot.getChance();
     }
 
     public void removeLoot(Loot loot) {

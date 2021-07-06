@@ -5,12 +5,14 @@ import me.zxoir.lootchests.customclasses.LootChest;
 import me.zxoir.lootchests.managers.ConfigManager;
 import me.zxoir.lootchests.managers.LootChestManager;
 import me.zxoir.lootchests.managers.LootManager;
+import me.zxoir.lootchests.utils.LootHolder;
 import me.zxoir.lootchests.utils.TimeManager;
 import me.zxoir.lootchests.utils.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentBuilderApplicable;
 import net.md_5.bungee.api.chat.*;
 import net.md_5.bungee.api.chat.hover.content.Text;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -19,6 +21,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 
 import static me.zxoir.lootchests.utils.Utils.colorize;
@@ -66,7 +69,7 @@ public class MainCommand implements CommandExecutor {
                 player.sendMessage(colorize("&cFailed to create new LootChest"));
         }
 
-        if (args.length >= 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("normal")) {
+        if (args.length == 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("normal")) {
             Long interval = new TimeManager(args[2]).toMilliSecond();
             if (interval == null || interval <= 0) {
                 player.sendMessage(colorize("&cThe interval must be over 0!"));
@@ -87,7 +90,7 @@ public class MainCommand implements CommandExecutor {
                 player.sendMessage(colorize("&cFailed to create new LootChest"));
         }
 
-        if (args.length >= 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("random")) {
+        if (args.length == 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("random")) {
             Long interval = new TimeManager(args[2]).toMilliSecond();
             if (interval == null || interval <= 0) {
                 player.sendMessage(colorize("&cThe interval must be over 0!"));
@@ -181,6 +184,18 @@ public class MainCommand implements CommandExecutor {
 
 
             lootChest.setInterval(interval);
+        }
+
+        if (args.length == 3 && args[0].equalsIgnoreCase("addloot") && isInteger(args[1]) && isInteger(args[2])) {
+            int id = Integer.parseInt(args[1]);
+            if (!LootChestManager.getLootChests().containsKey(id)) {
+                player.sendMessage(colorize("&cThat's an invalid ID."));
+                return true;
+            }
+
+            LootChest lootChest = LootChestManager.getLootChests().get(id);
+            Inventory inventory = Bukkit.createInventory(new LootHolder(player, lootChest, Integer.parseInt(args[2])), 27, colorize("&aAdd your loot"));
+            player.openInventory(inventory);
         }
 
         return true;

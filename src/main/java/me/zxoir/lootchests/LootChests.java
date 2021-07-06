@@ -4,6 +4,7 @@ import lombok.Getter;
 import me.zxoir.lootchests.commands.MainCommand;
 import me.zxoir.lootchests.customclasses.LootChest;
 import me.zxoir.lootchests.listeners.EditLocationListener;
+import me.zxoir.lootchests.listeners.LootListener;
 import me.zxoir.lootchests.managers.ConfigManager;
 import me.zxoir.lootchests.managers.LootChestManager;
 import me.zxoir.lootchests.utils.LootChestsDB;
@@ -47,6 +48,7 @@ public final class LootChests extends JavaPlugin {
         start = System.currentTimeMillis();
         getCommand("lootchests").setExecutor(new MainCommand());
         getServer().getPluginManager().registerEvents(new EditLocationListener(), this);
+        getServer().getPluginManager().registerEvents(new LootListener(), this);
         lcLogger.info("Loaded commands and listeners in " + (System.currentTimeMillis() - start) + "ms");
 
         lcLogger.info("Completed plugin setup in " + (System.currentTimeMillis() - initalTime) + "ms");

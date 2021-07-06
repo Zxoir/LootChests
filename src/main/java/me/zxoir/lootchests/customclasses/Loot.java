@@ -15,6 +15,6 @@ import org.bukkit.inventory.ItemStack;
 @Getter
 @Setter
 public class Loot {
-    ItemStack[] itemStacks;
-    int chance;
+    private ItemStack[] itemStacks;
+    private int chance;
 }
