@@ -3,6 +3,7 @@ package me.zxoir.lootchests.customclasses;
 import lombok.Getter;
 import me.zxoir.lootchests.LootChests;
 import me.zxoir.lootchests.managers.LootChestManager;
+import me.zxoir.lootchests.managers.LootChestsDBManager;
 import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 
@@ -72,6 +73,26 @@ public class LootChest {
         }
 
         return loots.get(loots.size() - 1);
+    }
+
+    public void addLocation(Location location) {
+        locations.add(location);
+        LootChestManager.updateLootChest(this);
+    }
+
+    public void removeLocation(Location location) {
+        locations.remove(location);
+        LootChestManager.updateLootChest(this);
+    }
+
+    public void setLootAmount(int lootAmount) {
+        this.lootAmount = lootAmount;
+        LootChestManager.updateLootChest(this);
+    }
+
+    public void setInterval(Long interval) {
+        this.interval = interval;
+        LootChestManager.updateLootChest(this);
     }
 
     public SerializableLootChest getSerializedLootChest() {
