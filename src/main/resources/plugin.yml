@@ -4,3 +4,15 @@ main: me.zxoir.lootchests.LootChests
 api-version: 1.16
 authors: [ Zxoir ]
 description: LootChests Plugin
+commands:
+  lootchests:
+    description: Main command for Lootchests
+    usage: /lootchests
+    aliases:
+      - lootchest
+      - lc
+      - lcs
+permissions:
+  lootchests.admin:
+    description: Access to all commands for this Plugin
+    default: op

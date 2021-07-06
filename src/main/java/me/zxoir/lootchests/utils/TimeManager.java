@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.concurrent.TimeUnit;
 
 /**
- * MIT License Copyright (c) 2020 Zxoir
+ * MIT License Copyright (c) 2021 Zxoir
  *
  * @author Zxoir
  * @since 7/2/2021

@@ -10,7 +10,7 @@ import java.util.LinkedList;
 import java.util.Random;
 
 /**
- * MIT License Copyright (c) 2020 Zxoir
+ * MIT License Copyright (c) 2021 Zxoir
  *
  * @author Zxoir
  * @since 7/1/2021
@@ -72,5 +72,9 @@ public class LootChest {
         }
 
         return loots.get(loots.size() - 1);
+    }
+
+    public SerializableLootChest getSerializedLootChest() {
+        return new SerializableLootChest(interval, type, loots, locations, lootAmount, totalWeight, id);
     }
 }

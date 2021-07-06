@@ -3,7 +3,7 @@ package me.zxoir.lootchests.managers;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import me.zxoir.lootchests.customclasses.LootChest;
-import me.zxoir.lootchests.customclasses.LootChestDB;
+import me.zxoir.lootchests.customclasses.SerializableLootChest;
 import me.zxoir.lootchests.utils.LootChestsDB;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +17,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * MIT License Copyright (c) 2020 Zxoir
+ * MIT License Copyright (c) 2021 Zxoir
  *
  * @author Zxoir
  * @since 7/2/2021
@@ -84,7 +84,7 @@ public class LootChestsDBManager {
 
     @NotNull
     @Contract("_ -> new")
-    public static CompletableFuture<Void> saveLootChestToDB(LootChestDB lootChest) {
+    protected static CompletableFuture<Void> saveLootChestToDB(SerializableLootChest lootChest) {
         return LootChestsDB.execute(conn -> {
             PreparedStatement statement = conn.prepareStatement("INSERT INTO LootChests(lootchestData) VALUES(?)");
             statement.setString(1, gson.toJson(lootChest));
@@ -94,7 +94,7 @@ public class LootChestsDBManager {
 
     @NotNull
     @Contract("_ -> new")
-    public static CompletableFuture<Void> deleteLootChestFromDB(int id) {
+    protected static CompletableFuture<Void> deleteLootChestFromDB(int id) {
         return LootChestsDB.execute(conn -> {
             PreparedStatement statement = conn.prepareStatement("DELETE FROM LootChests WHERE id=?");
             statement.setInt(1, id);
@@ -104,7 +104,7 @@ public class LootChestsDBManager {
 
     @NotNull
     @Contract("_ -> new")
-    public static CompletableFuture<Void> updateLootChest(LootChestDB lootChest) {
+    protected static CompletableFuture<Void> updateLootChest(SerializableLootChest lootChest) {
         return LootChestsDB.execute(conn -> {
             PreparedStatement statement = conn.prepareStatement(
                     "UPDATE LootChests SET lootchestData = ? WHERE id = ?");
@@ -114,7 +114,7 @@ public class LootChestsDBManager {
         });
     }
 
-    public static int getAutoIncrementValue() {
+    protected static int getAutoIncrementValue() {
         try {
             AtomicReference<Integer> result = new AtomicReference<>(-1);
 
@@ -149,8 +149,8 @@ public class LootChestsDBManager {
 
     @NotNull
     private static LootChest dbToLootChest(@NotNull ResultSet resultSet) throws SQLException {
-        LootChestDB lootChestDB = gson.fromJson(resultSet.getString("lootchestData"), new TypeToken<LootChestDB>() {
+        SerializableLootChest serializableLootChest = gson.fromJson(resultSet.getString("lootchestData"), new TypeToken<SerializableLootChest>() {
         }.getType());
-        return new LootChest(lootChestDB.getInterval(), lootChestDB.getType(), lootChestDB.getLoots(), lootChestDB.getLocations(), lootChestDB.getLootAmount(), lootChestDB.getTotalWeight(), lootChestDB.getId());
+        return serializableLootChest.getDeserializedLootChest();
     }
 }

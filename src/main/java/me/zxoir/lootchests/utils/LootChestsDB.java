@@ -24,20 +24,20 @@ public class LootChestsDB {
     public LootChestsDB(String sqlCreateStatement) {
         if (setup) return;
 
-        LootChests.getLogger().info("Starting Database setup - SQLITE");
+        LootChests.getLcLogger().info("Starting Database setup - SQLITE");
         long start = System.currentTimeMillis();
         final File dbFile = new File(LootChests.getInstance().getDataFolder(), "database.db");
         try {
             if (!dbFile.exists()) {
                 if (dbFile.createNewFile())
-                    LootChests.getLogger().info("Created database file." + SQLiteDataSource.class);
+                    LootChests.getLcLogger().info("Created database file." + SQLiteDataSource.class);
                 else
-                    LootChests.getLogger().warn("Could not create database file." + SQLiteDataSource.class);
+                    LootChests.getLcLogger().warn("Could not create database file." + SQLiteDataSource.class);
 
             }
 
         } catch (IOException e) {
-            LootChests.getLogger().warn("Failed to create database file.");
+            LootChests.getLcLogger().warn("Failed to create database file.");
             e.printStackTrace();
         }
 
@@ -66,7 +66,7 @@ public class LootChestsDB {
         }
 
         double finish = (double) (System.currentTimeMillis() - start) / 1000.0;
-        LootChests.getLogger().info("Completed DB setup in " + finish + " s");
+        LootChests.getLcLogger().info("Completed DB setup in " + finish + " s");
         setup = true;
     }
 
