@@ -10,8 +10,13 @@ import me.zxoir.lootchests.managers.LootChestManager;
 import me.zxoir.lootchests.utils.LootChestsDB;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.Chest;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+
+import static org.bukkit.Material.AIR;
 
 /**
  * MIT License Copyright (c) 2021 Zxoir
@@ -53,6 +58,17 @@ public final class LootChests extends JavaPlugin {
 
         lcLogger.info("Completed plugin setup in " + (System.currentTimeMillis() - initalTime) + "ms");
         lcLogger.info("======================================================================");
+    }
+
+    @Override
+    public void onDisable() {
+        LootChestManager.getLootChests().values().forEach(lootChest -> {
+            Block block = lootChest.getSpawnTask().getLastSpawned();
+            if (block != null && block.getType().equals(Material.CHEST)) {
+                ((Chest) block.getState()).getBlockInventory().clear();
+                block.setType(AIR);
+            }
+        });
     }
 
     public enum LootChestType {

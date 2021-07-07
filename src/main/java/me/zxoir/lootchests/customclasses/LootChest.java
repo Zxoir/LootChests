@@ -1,9 +1,9 @@
 package me.zxoir.lootchests.customclasses;
 
 import lombok.Getter;
+import lombok.Setter;
 import me.zxoir.lootchests.LootChests;
 import me.zxoir.lootchests.managers.LootChestManager;
-import me.zxoir.lootchests.managers.LootChestsDBManager;
 import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,20 +18,25 @@ import java.util.Random;
  */
 public class LootChest {
     private static final Random random = new Random();
+    private @NotNull
     @Getter
-    @NotNull
-    Long interval;
+    final LinkedList<Loot> loots;
     @Getter
-    @NotNull
-    LootChests.LootChestType type;
-    @NotNull LinkedList<Loot> loots;
-    @Getter
-    @NotNull LinkedList<Location> locations;
-    @Getter
-    int lootAmount;
-    int totalWeight;
+    private final @NotNull LinkedList<Location> locations;
     @Getter
     private final int id;
+    @Getter
+    @NotNull
+    private Long interval;
+    @Getter
+    @Setter
+    @NotNull
+    private LootChests.LootChestType type;
+    @Getter
+    private int lootAmount;
+    private int totalWeight;
+    @Getter
+    private final SpawnTask spawnTask;
 
     public LootChest(@NotNull Long interval, @NotNull LootChests.LootChestType type, int lootAmount) {
         this.interval = interval;
@@ -40,6 +45,8 @@ public class LootChest {
         this.id = LootChestManager.getNewID();
         loots = new LinkedList<>();
         locations = new LinkedList<>();
+        spawnTask = new SpawnTask(this);
+        spawnTask.runTaskTimerAsynchronously(LootChests.getInstance(), 0, 5);
     }
 
     public LootChest(@NotNull Long interval, @NotNull LootChests.LootChestType type, @NotNull LinkedList<Loot> loots, @NotNull LinkedList<Location> locations, int lootAmount, int totalWeight, int id) {
@@ -50,9 +57,11 @@ public class LootChest {
         this.lootAmount = lootAmount;
         this.totalWeight = totalWeight;
         this.id = id;
+        spawnTask = new SpawnTask(this);
+        spawnTask.runTaskTimerAsynchronously(LootChests.getInstance(), 0, 5);
     }
 
-    public void addLoot(Loot loot){
+    public void addLoot(Loot loot) {
         loots.add(loot);
         totalWeight += loot.getChance();
     }
@@ -97,5 +106,9 @@ public class LootChest {
 
     public SerializableLootChest getSerializedLootChest() {
         return new SerializableLootChest(interval, type, loots, locations, lootAmount, totalWeight, id);
+    }
+
+    public void delete() {
+        LootChestManager.deleteLootChest(this);
     }
 }

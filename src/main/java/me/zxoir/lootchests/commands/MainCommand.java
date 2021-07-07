@@ -69,27 +69,6 @@ public class MainCommand implements CommandExecutor {
                 player.sendMessage(colorize("&cFailed to create new LootChest"));
         }
 
-        if (args.length == 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("normal")) {
-            Long interval = new TimeManager(args[2]).toMilliSecond();
-            if (interval == null || interval <= 0) {
-                player.sendMessage(colorize("&cThe interval must be over 0!"));
-                return true;
-            }
-
-            LootChest lootChest = new LootChest(interval, LootChests.LootChestType.NORMAL, 1);
-
-            if (LootChestManager.registerLootChest(lootChest)) {
-                TextComponent message = new TextComponent(colorize("&aSuccessfully created a new LootChest with ID " + lootChest.getId() +
-                        "\n&7To set the lootchests location, use &e/lootchest edit " + lootChest.getId()));
-                message.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/lootchest edit " + lootChest.getId()));
-                message.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(colorize("&aClick here to run the command"))));
-
-                player.spigot().sendMessage(message);
-            }
-            else
-                player.sendMessage(colorize("&cFailed to create new LootChest"));
-        }
-
         if (args.length == 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("random")) {
             Long interval = new TimeManager(args[2]).toMilliSecond();
             if (interval == null || interval <= 0) {
@@ -134,6 +113,7 @@ public class MainCommand implements CommandExecutor {
             }
 
             int id = Integer.parseInt(args[1]);
+            player.sendMessage(id + " " + LootChestManager.getLootChests().containsKey(id));
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
                 return true;
@@ -196,6 +176,17 @@ public class MainCommand implements CommandExecutor {
             LootChest lootChest = LootChestManager.getLootChests().get(id);
             Inventory inventory = Bukkit.createInventory(new LootHolder(player, lootChest, Integer.parseInt(args[2])), 27, colorize("&aAdd your loot"));
             player.openInventory(inventory);
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("delete") && isInteger(args[1])) {
+            int id = Integer.parseInt(args[1]);
+            if (!LootChestManager.getLootChests().containsKey(id)) {
+                player.sendMessage(colorize("&cThat's an invalid ID."));
+                return true;
+            }
+
+            LootChest lootChest = LootChestManager.getLootChests().get(id);
+            lootChest.getSpawnTask().cancel();
         }
 
         return true;

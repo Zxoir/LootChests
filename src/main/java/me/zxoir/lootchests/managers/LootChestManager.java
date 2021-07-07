@@ -64,11 +64,18 @@ public class LootChestManager {
     public static boolean registerLootChest(@NotNull LootChest lootChest) {
         if (lootChests.containsKey(lootChest.getId())) return false;
         LootChestsDBManager.saveLootChestToDB(lootChest.getSerializedLootChest());
+        lootChests.put(lootChest.getId(), lootChest);
         return true;
     }
 
     public static void updateLootChest(@NotNull LootChest lootChest) {
         LootChestsDBManager.updateLootChest(lootChest.getSerializedLootChest());
+    }
+
+    public static void deleteLootChest(@NotNull LootChest lootChest) {
+        lootChest.getSpawnTask().cancel();
+        LootChestsDBManager.deleteLootChestFromDB(lootChest.getId());
+        lootChests.remove(lootChest.getId());
     }
 
     public static int getID() {
