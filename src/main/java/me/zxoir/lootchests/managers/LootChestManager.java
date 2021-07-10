@@ -6,7 +6,10 @@ import me.zxoir.lootchests.customclasses.LootChest;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.block.Block;
+import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -16,6 +19,7 @@ import java.time.Instant;
 import java.util.HashMap;
 
 import static me.zxoir.lootchests.utils.Utils.colorize;
+import static org.bukkit.Material.AIR;
 
 /**
  * MIT License Copyright (c) 2021 Zxoir
@@ -74,6 +78,11 @@ public class LootChestManager {
 
     public static void deleteLootChest(@NotNull LootChest lootChest) {
         lootChest.getSpawnTask().cancel();
+        Block block = lootChest.getSpawnTask().getLastSpawned();
+        if (block != null && block.getType().equals(Material.CHEST)) {
+            ((Chest) block.getState()).getBlockInventory().clear();
+            block.setType(AIR);
+        }
         LootChestsDBManager.deleteLootChestFromDB(lootChest.getId());
         lootChests.remove(lootChest.getId());
     }

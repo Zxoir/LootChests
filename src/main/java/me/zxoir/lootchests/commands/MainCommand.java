@@ -6,6 +6,7 @@ import me.zxoir.lootchests.managers.ConfigManager;
 import me.zxoir.lootchests.managers.LootChestManager;
 import me.zxoir.lootchests.managers.LootManager;
 import me.zxoir.lootchests.utils.LootHolder;
+import me.zxoir.lootchests.utils.LootsEditorHolder;
 import me.zxoir.lootchests.utils.TimeManager;
 import me.zxoir.lootchests.utils.Utils;
 import net.kyori.adventure.text.Component;
@@ -16,6 +17,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.Chest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,6 +26,8 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
+
+import java.time.Instant;
 
 import static me.zxoir.lootchests.utils.Utils.colorize;
 import static me.zxoir.lootchests.utils.Utils.isInteger;
@@ -48,7 +53,7 @@ public class MainCommand implements CommandExecutor {
             return true;
         }
 
-        if (args.length >= 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("normal")) {
+        if (args.length >= 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("normal")) { // Todo: Change the system to not be like random chests
             Long interval = new TimeManager(args[2]).toMilliSecond();
             if (interval == null || interval <= 0) {
                 player.sendMessage(colorize("&cThe interval must be over 0!"));
@@ -67,6 +72,72 @@ public class MainCommand implements CommandExecutor {
             }
             else
                 player.sendMessage(colorize("&cFailed to create new LootChest"));
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("status") && isInteger(args[1])) {
+            int id = Integer.parseInt(args[1]);
+            if (!LootChestManager.getLootChests().containsKey(id)) {
+                player.sendMessage(colorize("&cThat's an invalid ID."));
+                return true;
+            }
+            LootChest lootChest = LootChestManager.getLootChests().get(id);
+            boolean spawnIsNull = lootChest.getSpawnTask().getLastSpawned() == null;
+
+            player.sendMessage(colorize("&7&lCurrent status for LootChest " + lootChest.getId() + "\n" +
+                    "&aLast spawned location: &8" + (spawnIsNull ? "N/A" : locationToString(lootChest.getSpawnTask().getLastSpawned().getLocation())) + "\n" +
+                    "&aClaimed: &8" + lootChest.isClaimed() + "\n" +
+                    "&aDisabled: &8" + lootChest.isDisabled()));
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("enable") && isInteger(args[1])) {
+            int id = Integer.parseInt(args[1]);
+            if (!LootChestManager.getLootChests().containsKey(id)) {
+                player.sendMessage(colorize("&cThat's an invalid ID."));
+                return true;
+            }
+            LootChest lootChest = LootChestManager.getLootChests().get(id);
+
+            lootChest.setDisabled(false);
+            player.sendMessage(colorize("&aLootChest enabled."));
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("disable") && isInteger(args[1])) {
+            int id = Integer.parseInt(args[1]);
+            if (!LootChestManager.getLootChests().containsKey(id)) {
+                player.sendMessage(colorize("&cThat's an invalid ID."));
+                return true;
+            }
+            LootChest lootChest = LootChestManager.getLootChests().get(id);
+
+            if (!lootChest.isClaimed() && lootChest.getSpawnTask().getLastSpawned() != null && lootChest.getSpawnTask().getLastSpawned().getType().equals(Material.CHEST)) {
+                Chest chest = (Chest) lootChest.getSpawnTask().getLastSpawned().getState();
+                chest.getBlockInventory().clear();
+                lootChest.getSpawnTask().getLastSpawned().setType(Material.AIR);
+            }
+            lootChest.setDisabled(true);
+            player.sendMessage(colorize("&cLootChest disabled."));
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("forceSpawn") && isInteger(args[1])) {
+            int id = Integer.parseInt(args[1]);
+            if (!LootChestManager.getLootChests().containsKey(id)) {
+                player.sendMessage(colorize("&cThat's an invalid ID."));
+                return true;
+            }
+            LootChest lootChest = LootChestManager.getLootChests().get(id);
+
+            lootChest.getSpawnTask().setSpawn(Instant.now());
+            player.sendMessage(colorize("&aLootChest has been spawned."));
+        }
+
+        if (args.length == 1 && args[0].equalsIgnoreCase("list")) {
+            if (LootChestManager.getLootChests().isEmpty()) {
+                player.sendMessage(colorize("&cThere aren't any LootChests available."));
+                return true;
+            }
+
+            player.sendMessage(colorize("&b&lList of LootChest ID's:"));
+            LootChestManager.getLootChests().values().forEach(lootChest -> player.sendMessage(colorize("&7- &a" + lootChest.getId())));
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("random")) {
@@ -113,7 +184,6 @@ public class MainCommand implements CommandExecutor {
             }
 
             int id = Integer.parseInt(args[1]);
-            player.sendMessage(id + " " + LootChestManager.getLootChests().containsKey(id));
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
                 return true;
@@ -166,6 +236,12 @@ public class MainCommand implements CommandExecutor {
             lootChest.setInterval(interval);
         }
 
+        if (args.length == 3 && args[0].equalsIgnoreCase("edit") && isInteger(args[1]) && args[2].equalsIgnoreCase("loot")) {
+            LootsEditorHolder lootsEditorHolder = new LootsEditorHolder(null, null);
+            player.openInventory(lootsEditorHolder.getInventory());
+            player.sendMessage(lootsEditorHolder.getInventory().getHolder().getClass().getName());
+        }
+
         if (args.length == 3 && args[0].equalsIgnoreCase("addloot") && isInteger(args[1]) && isInteger(args[2])) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
@@ -186,9 +262,14 @@ public class MainCommand implements CommandExecutor {
             }
 
             LootChest lootChest = LootChestManager.getLootChests().get(id);
-            lootChest.getSpawnTask().cancel();
+            lootChest.delete();
+            player.sendMessage(colorize("&aLootChest successfully deleted."));
         }
 
         return true;
+    }
+
+    private String locationToString(Location location) {
+        return location.getX() + ", " + location.getY() + ", " + location.getZ();
     }
 }

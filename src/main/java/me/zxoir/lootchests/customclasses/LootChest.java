@@ -34,6 +34,12 @@ public class LootChest {
     private LootChests.LootChestType type;
     @Getter
     private int lootAmount;
+    @Getter
+    @Setter
+    private boolean disabled;
+    @Getter
+    @Setter
+    private boolean claimed;
     private int totalWeight;
     @Getter
     private final SpawnTask spawnTask;
@@ -47,6 +53,8 @@ public class LootChest {
         locations = new LinkedList<>();
         spawnTask = new SpawnTask(this);
         spawnTask.runTaskTimerAsynchronously(LootChests.getInstance(), 0, 5);
+        disabled = false;
+        claimed = false;
     }
 
     public LootChest(@NotNull Long interval, @NotNull LootChests.LootChestType type, @NotNull LinkedList<Loot> loots, @NotNull LinkedList<Location> locations, int lootAmount, int totalWeight, int id) {
@@ -59,6 +67,8 @@ public class LootChest {
         this.id = id;
         spawnTask = new SpawnTask(this);
         spawnTask.runTaskTimerAsynchronously(LootChests.getInstance(), 0, 5);
+        disabled = false;
+        claimed = false;
     }
 
     public void addLoot(Loot loot) {
@@ -71,7 +81,7 @@ public class LootChest {
         totalWeight -= loot.getChance();
     }
 
-    public Loot generateLoot() { // Todo: Test
+    public Loot generateLoot() {
         int currentItemUpperBound = 0;
 
         int nextValue = random.nextInt(totalWeight);

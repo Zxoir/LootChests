@@ -11,8 +11,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
 
 /**
  * MIT License Copyright (c) 2021 Zxoir
@@ -29,6 +28,8 @@ public class SpawnTask extends BukkitRunnable {
     private Instant spawn;
     @Getter
     private Block lastSpawned;
+    @Getter
+    private static final HashMap<Block, LootChest> chests = new HashMap<>();
 
     public SpawnTask(LootChest lootChest) {
         this.lootChest = lootChest;
@@ -38,13 +39,13 @@ public class SpawnTask extends BukkitRunnable {
 
     @Override
     public void run() {
-        if (Duration.between(Instant.now(), spawn).getSeconds() > 0)
-            return;
+        if (Duration.between(Instant.now(), spawn).getSeconds() > 0) return;
 
-        if (lootChest.getLocations().isEmpty())
-            return;
+        if (lootChest.getLocations().isEmpty()) return;
 
         if (lootChest.getLoots().isEmpty()) return;
+
+        if (lootChest.isDisabled()) return;
 
         Location location = lootChest.getLocations().get(random.nextInt(lootChest.getLocations().size()));
         Loot loot = lootChest.generateLoot();
@@ -64,7 +65,10 @@ public class SpawnTask extends BukkitRunnable {
             location.getBlock().setType(Material.CHEST);
             Chest chest = (Chest) location.getBlock().getState();
             Arrays.stream(loot.getItemStacks()).filter(item -> item != null && !item.getType().equals(Material.AIR)).forEach(item -> chest.getBlockInventory().addItem(item));
+            chests.remove(lastSpawned);
+            chests.put(location.getBlock(), lootChest);
             lastSpawned = location.getBlock();
+            lootChest.setClaimed(false);
         });
         spawn = Instant.now().plusMillis(lootChest.getInterval());
     }
