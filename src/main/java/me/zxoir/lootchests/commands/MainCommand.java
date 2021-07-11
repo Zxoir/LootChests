@@ -4,20 +4,16 @@ import me.zxoir.lootchests.LootChests;
 import me.zxoir.lootchests.customclasses.LootChest;
 import me.zxoir.lootchests.managers.ConfigManager;
 import me.zxoir.lootchests.managers.LootChestManager;
-import me.zxoir.lootchests.managers.LootManager;
 import me.zxoir.lootchests.utils.LootHolder;
 import me.zxoir.lootchests.utils.LootsEditorHolder;
 import me.zxoir.lootchests.utils.TimeManager;
 import me.zxoir.lootchests.utils.Utils;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.ComponentBuilderApplicable;
 import net.md_5.bungee.api.chat.*;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -237,9 +233,25 @@ public class MainCommand implements CommandExecutor {
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("edit") && isInteger(args[1]) && args[2].equalsIgnoreCase("loot")) {
+            int id = Integer.parseInt(args[1]);
+            if (!LootChestManager.getLootChests().containsKey(id)) {
+                player.sendMessage(colorize("&cThat's an invalid ID."));
+                return true;
+            }
+
+            LootChest lootChest = LootChestManager.getLootChests().get(id);
+            LootsEditorHolder lootsEditorHolder = new LootsEditorHolder(null, lootChest);
+            player.openInventory(lootsEditorHolder.getInventory());
+        }
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("edit") && args[1].equalsIgnoreCase("loots")) {
+            if (LootChestManager.getLootChests().isEmpty()) {
+                player.sendMessage(colorize("&cThere aren't any LootChests"));
+                return true;
+            }
+
             LootsEditorHolder lootsEditorHolder = new LootsEditorHolder(null, null);
             player.openInventory(lootsEditorHolder.getInventory());
-            player.sendMessage(lootsEditorHolder.getInventory().getHolder().getClass().getName());
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("addloot") && isInteger(args[1]) && isInteger(args[2])) {

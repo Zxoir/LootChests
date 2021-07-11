@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static me.zxoir.lootchests.utils.Utils.colorize;
 
@@ -30,12 +31,21 @@ public class LootsEditorHolder implements InventoryHolder {
     LootChest lootChest;
 
     @Override
-    public @NotNull Inventory getInventory() {
+    public @NotNull Inventory getInventory() { // todo: pages
         if (loot != null) {
+            Inventory inventory = Bukkit.createInventory(this, 27, colorize("&aEdit Loot"));
+            inventory.setContents(loot.getItemStacks());
 
-
+            return inventory;
         } else if (lootChest != null) {
+            Inventory inventory = Bukkit.createInventory(this, 27, colorize("&aEdit Loot"));
+            int i = 0;
+            for (Loot loot : lootChest.getLoots()) {
+                inventory.addItem(new ItemStackBuilder(Material.BOOK).withName("&aLoot " + i).build());
+                i++;
+            }
 
+            return inventory;
         } else {
             int totalSize = 0;
             Collection<LootChest> lootChests = LootChestManager.getLootChests().values();
@@ -57,15 +67,13 @@ public class LootsEditorHolder implements InventoryHolder {
             return inventory;
         }
 
-        return null;
-
     }
 
     private int getTotalItemStacks(ItemStack[] itemStacks) {
         int i = 0;
         for (ItemStack itemStack : itemStacks) {
-            if (itemStack != null)
-                i += itemStack.getAmount();
+            if (itemStack != null && !itemStack.getType().equals(Material.AIR))
+                i++;
         }
 
         return i;

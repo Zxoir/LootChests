@@ -74,11 +74,13 @@ public class LootChest {
     public void addLoot(Loot loot) {
         loots.add(loot);
         totalWeight += loot.getChance();
+        LootChestManager.updateLootChest(this);
     }
 
     public void removeLoot(Loot loot) {
         loots.remove(loot);
         totalWeight -= loot.getChance();
+        LootChestManager.updateLootChest(this);
     }
 
     public Loot generateLoot() {

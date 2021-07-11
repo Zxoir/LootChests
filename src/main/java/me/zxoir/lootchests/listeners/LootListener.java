@@ -6,8 +6,13 @@ import me.zxoir.lootchests.customclasses.LootChest;
 import me.zxoir.lootchests.customclasses.SpawnTask;
 import me.zxoir.lootchests.events.AddLootEvent;
 import me.zxoir.lootchests.events.LootChestClaimEvent;
+import me.zxoir.lootchests.events.ModifyLootEvent;
+import me.zxoir.lootchests.managers.LootChestManager;
 import me.zxoir.lootchests.utils.LootHolder;
+import me.zxoir.lootchests.utils.LootsEditorHolder;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -15,8 +20,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
- import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Arrays;
@@ -70,5 +77,69 @@ public class LootListener implements Listener {
         chest.getBlockInventory().clear();
         block.setType(Material.AIR);
         Bukkit.getScheduler().runTaskLater(LootChests.getInstance(), () -> player.getOpenInventory().getTopInventory().setContents(lootChestClaimEvent.getContents()), 1);
+    }
+
+    @EventHandler
+    public void onLootModify(InventoryCloseEvent event) {
+        if (event.getInventory().getHolder() == null || !event.getInventory().getHolder().getClass().equals(LootsEditorHolder.class)) return;
+        LootsEditorHolder holder = (LootsEditorHolder) event.getInventory().getHolder();
+        if (holder.getLootChest() == null || holder.getLoot() == null) return;
+
+        if (Arrays.stream(event.getInventory().getContents()).allMatch(itemStack -> itemStack == null || itemStack.getType().equals(Material.AIR))) return;
+
+        ModifyLootEvent modifyLootEvent = new ModifyLootEvent((Player) event.getPlayer(), holder.getLoot());
+        ItemStack[] oldLoot = holder.getLoot().getItemStacks();
+        Bukkit.getPluginManager().callEvent(modifyLootEvent);
+        if (modifyLootEvent.isCancelled()) return;
+        if (Arrays.stream(event.getInventory().getContents()).allMatch(itemStack -> itemStack == null || itemStack.getType().equals(Material.AIR))) return;
+        holder.getLoot().setItemStacks(event.getInventory().getContents());
+        if (!Arrays.equals(oldLoot, event.getInventory().getContents()))
+            event.getPlayer().sendMessage(colorize("&aSuccessfully modified Loot!"));
+    }
+
+    @EventHandler
+    public void onClick(InventoryClickEvent event) {
+        if (event.getInventory().getHolder() == null || !event.getInventory().getHolder().getClass().equals(LootsEditorHolder.class) || event.getCurrentItem() == null || event.getCurrentItem().getType().equals(Material.AIR))
+            return;
+        Player player = (Player) event.getWhoClicked();
+        LootsEditorHolder holder = (LootsEditorHolder) event.getInventory().getHolder();
+        event.setCancelled(true);
+
+        if (holder.getLoot() != null) {
+            event.setCancelled(false);
+        } else if (holder.getLootChest() != null) {
+            if (!event.getCurrentItem().getType().equals(Material.BOOK)) return;
+            int id = Integer.parseInt(StringUtils.substringAfter(ChatColor.stripColor(event.getCurrentItem().getItemMeta().getDisplayName()), " "));
+            Loot loot = holder.getLootChest().getLoots().get(id);
+
+            if (loot == null) {
+                player.sendMessage(colorize("&cLoot not found."));
+                player.closeInventory();
+                return;
+            }
+
+            Inventory inventory = new LootsEditorHolder(loot, holder.getLootChest()).getInventory();
+            player.openInventory(inventory);
+        } else {
+            if (!event.getCurrentItem().getType().equals(Material.CHEST)) return;
+            int id = Integer.parseInt(StringUtils.substringAfter(ChatColor.stripColor(event.getCurrentItem().getItemMeta().getDisplayName()), " "));
+            LootChest lootChest = LootChestManager.getLootChests().get(id);
+
+            if (lootChest == null) {
+                player.sendMessage(colorize("&cLootChest not found."));
+                player.closeInventory();
+                return;
+            }
+
+            if (lootChest.getLoots().isEmpty()) {
+                player.sendMessage(colorize("&cThis LootChest does not contain any Loot."));
+                player.closeInventory();
+                return;
+            }
+
+            Inventory inventory = new LootsEditorHolder(null, lootChest).getInventory();
+            player.openInventory(inventory);
+        }
+
     }
 }
