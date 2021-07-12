@@ -7,6 +7,7 @@ import me.zxoir.lootchests.customclasses.SpawnTask;
 import me.zxoir.lootchests.events.AddLootEvent;
 import me.zxoir.lootchests.events.LootChestClaimEvent;
 import me.zxoir.lootchests.events.ModifyLootEvent;
+import me.zxoir.lootchests.events.RemoveLootEvent;
 import me.zxoir.lootchests.managers.LootChestManager;
 import me.zxoir.lootchests.utils.LootHolder;
 import me.zxoir.lootchests.utils.LootsEditorHolder;
@@ -20,6 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -36,6 +38,7 @@ import static me.zxoir.lootchests.utils.Utils.colorize;
  * @author Zxoir
  * @since 7/7/2021
  */
+@SuppressWarnings("deprecation")
 public class LootListener implements Listener {
 
     @EventHandler
@@ -83,7 +86,7 @@ public class LootListener implements Listener {
     public void onLootModify(InventoryCloseEvent event) {
         if (event.getInventory().getHolder() == null || !event.getInventory().getHolder().getClass().equals(LootsEditorHolder.class)) return;
         LootsEditorHolder holder = (LootsEditorHolder) event.getInventory().getHolder();
-        if (holder.getLootChest() == null || holder.getLoot() == null) return;
+        if (holder.getLootChest() == null || holder.getLoot() == null || holder.isRemove()) return;
 
         if (Arrays.stream(event.getInventory().getContents()).allMatch(itemStack -> itemStack == null || itemStack.getType().equals(Material.AIR))) return;
 
@@ -106,6 +109,22 @@ public class LootListener implements Listener {
         event.setCancelled(true);
 
         if (holder.getLoot() != null) {
+            if (holder.isRemove()) {
+                if (event.getCurrentItem().getType().equals(Material.RED_WOOL)) {
+                    Inventory inventory = new LootsEditorHolder(null, holder.getLootChest(), false).getInventory();
+                    player.openInventory(inventory);
+                } else if (event.getCurrentItem().getType().equals(Material.GREEN_WOOL)) {
+                    RemoveLootEvent removeLootEvent = new RemoveLootEvent(player, holder.getLoot(), holder.getLootChest());
+                    Bukkit.getPluginManager().callEvent(removeLootEvent);
+
+                    if (removeLootEvent.isCancelled()) return;
+
+                    player.closeInventory();
+                    player.sendMessage(colorize("&aLoot successfully removed."));
+                    holder.getLootChest().getLoots().remove(holder.getLoot());
+                }
+                return;
+            }
             event.setCancelled(false);
         } else if (holder.getLootChest() != null) {
             if (!event.getCurrentItem().getType().equals(Material.BOOK)) return;
@@ -118,7 +137,13 @@ public class LootListener implements Listener {
                 return;
             }
 
-            Inventory inventory = new LootsEditorHolder(loot, holder.getLootChest()).getInventory();
+            if (event.getClick().equals(ClickType.RIGHT)) {
+                Inventory inventory = new LootsEditorHolder(loot, holder.getLootChest(), true).getInventory();
+                player.openInventory(inventory);
+                return;
+            }
+
+            Inventory inventory = new LootsEditorHolder(loot, holder.getLootChest(), false).getInventory();
             player.openInventory(inventory);
         } else {
             if (!event.getCurrentItem().getType().equals(Material.CHEST)) return;
@@ -137,7 +162,7 @@ public class LootListener implements Listener {
                 return;
             }
 
-            Inventory inventory = new LootsEditorHolder(null, lootChest).getInventory();
+            Inventory inventory = new LootsEditorHolder(null, lootChest, false).getInventory();
             player.openInventory(inventory);
         }
 

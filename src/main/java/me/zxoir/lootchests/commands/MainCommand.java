@@ -34,6 +34,7 @@ import static me.zxoir.lootchests.utils.Utils.isInteger;
  * @author Zxoir
  * @since 7/4/2021
  */
+@SuppressWarnings("deprecation")
 public class MainCommand implements CommandExecutor {
 
     @Override
@@ -240,7 +241,7 @@ public class MainCommand implements CommandExecutor {
             }
 
             LootChest lootChest = LootChestManager.getLootChests().get(id);
-            LootsEditorHolder lootsEditorHolder = new LootsEditorHolder(null, lootChest);
+            LootsEditorHolder lootsEditorHolder = new LootsEditorHolder(null, lootChest, false);
             player.openInventory(lootsEditorHolder.getInventory());
         }
 
@@ -250,7 +251,7 @@ public class MainCommand implements CommandExecutor {
                 return true;
             }
 
-            LootsEditorHolder lootsEditorHolder = new LootsEditorHolder(null, null);
+            LootsEditorHolder lootsEditorHolder = new LootsEditorHolder(null, null, false);
             player.openInventory(lootsEditorHolder.getInventory());
         }
 

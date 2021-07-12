@@ -13,7 +13,6 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static me.zxoir.lootchests.utils.Utils.colorize;
 
@@ -23,25 +22,45 @@ import static me.zxoir.lootchests.utils.Utils.colorize;
  * @author Zxoir
  * @since 7/10/2021
  */
+@SuppressWarnings("deprecation")
 @AllArgsConstructor
 public class LootsEditorHolder implements InventoryHolder {
     @Getter
     Loot loot;
     @Getter
     LootChest lootChest;
+    @Getter
+    boolean remove;
 
     @Override
     public @NotNull Inventory getInventory() { // todo: pages
         if (loot != null) {
-            Inventory inventory = Bukkit.createInventory(this, 27, colorize("&aEdit Loot"));
-            inventory.setContents(loot.getItemStacks());
+            if (remove) {
+                Inventory inventory = Bukkit.createInventory(this, 27, colorize("&aEdit Loot"));
+                ItemStack blueGlass = new ItemStackBuilder(Material.BLUE_STAINED_GLASS_PANE).withName("&a").build();
+                ItemStack confirm = new ItemStackBuilder(Material.GREEN_WOOL).withName("&AConfirm").withLore("&eYes! Delete this Loot.").build();
+                ItemStack cancel = new ItemStackBuilder(Material.RED_WOOL).withName("&cCancel").withLore("&eNo! Cancel this request.").build();
 
-            return inventory;
+                for (int i = 0; i <= 9; i++) {
+                    inventory.setItem(i, blueGlass);
+                }
+                for (int i = 17; i < 27; i++) {
+                    inventory.setItem(i, blueGlass);
+                }
+                inventory.setItem(12, confirm);
+                inventory.setItem(14, cancel);
+
+                return inventory;
+            } else {
+                Inventory inventory = Bukkit.createInventory(this, 27, colorize("&aEdit Loot"));
+                inventory.setContents(loot.getItemStacks());
+                return inventory;
+            }
+
         } else if (lootChest != null) {
             Inventory inventory = Bukkit.createInventory(this, 27, colorize("&aEdit Loot"));
-            int i = 0;
-            for (Loot loot : lootChest.getLoots()) {
-                inventory.addItem(new ItemStackBuilder(Material.BOOK).withName("&aLoot " + i).build());
+            for (int i = 0; i < lootChest.getLoots().size(); i++) {
+                inventory.addItem(new ItemStackBuilder(Material.BOOK).withName("&aLoot " + i).withLore("&eLeft Click to edit this loot").withLore("&eRight Click to remove this Loot").build());
                 i++;
             }
 
