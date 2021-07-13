@@ -5,8 +5,10 @@ import lombok.Setter;
 import me.zxoir.lootchests.LootChests;
 import me.zxoir.lootchests.managers.LootChestManager;
 import org.bukkit.Location;
+import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -22,7 +24,7 @@ public class LootChest {
     @Getter
     final LinkedList<Loot> loots;
     @Getter
-    private final @NotNull LinkedList<Location> locations;
+    private final @NotNull LinkedHashMap<Location, BlockFace> locations;
     @Getter
     private final int id;
     @Getter
@@ -50,14 +52,14 @@ public class LootChest {
         this.lootAmount = lootAmount;
         this.id = LootChestManager.getNewID();
         loots = new LinkedList<>();
-        locations = new LinkedList<>();
+        locations = new LinkedHashMap<>();
         spawnTask = new SpawnTask(this);
         spawnTask.runTaskTimerAsynchronously(LootChests.getInstance(), 0, 5);
         disabled = false;
         claimed = false;
     }
 
-    public LootChest(@NotNull Long interval, @NotNull LootChests.LootChestType type, @NotNull LinkedList<Loot> loots, @NotNull LinkedList<Location> locations, int lootAmount, int totalWeight, int id) {
+    public LootChest(@NotNull Long interval, @NotNull LootChests.LootChestType type, @NotNull LinkedList<Loot> loots, @NotNull LinkedHashMap<Location, BlockFace> locations, int lootAmount, int totalWeight, int id) {
         this.interval = interval;
         this.type = type;
         this.loots = loots;
@@ -96,8 +98,8 @@ public class LootChest {
         return loots.get(loots.size() - 1);
     }
 
-    public void addLocation(Location location) {
-        locations.add(location);
+    public void addLocation(Location location, BlockFace blockFace) {
+        locations.put(location, blockFace);
         LootChestManager.updateLootChest(this);
     }
 

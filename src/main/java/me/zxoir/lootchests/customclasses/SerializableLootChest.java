@@ -9,8 +9,10 @@ import me.zxoir.lootchests.LootChests;
 import me.zxoir.lootchests.utils.ItemDeserializer;
 import me.zxoir.lootchests.utils.LocationAdapter;
 import org.bukkit.Location;
+import org.bukkit.block.BlockFace;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
 /**
@@ -25,12 +27,12 @@ public class SerializableLootChest {
     Long interval;
     LootChests.LootChestType type;
     LinkedList<SerializableLoot> loots;
-    LinkedList<String> locations;
+    LinkedHashMap<String, BlockFace> locations;
     int lootAmount;
     int totalWeight;
     int id;
 
-    public SerializableLootChest(Long interval, LootChests.LootChestType type, LinkedList<Loot> loots, LinkedList<Location> locations, int lootAmount, int totalWeight, int id) {
+    public SerializableLootChest(Long interval, LootChests.LootChestType type, LinkedList<Loot> loots, LinkedHashMap<Location, BlockFace> locations, int lootAmount, int totalWeight, int id) {
         this.interval = interval;
         this.type = type;
         this.lootAmount = lootAmount;
@@ -44,9 +46,9 @@ public class SerializableLootChest {
         this.loots = serializableLoots;
         final Gson adapter = new GsonBuilder().registerTypeAdapter(Location.class, new LocationAdapter()).registerTypeAdapter(Location.class, new LocationAdapter()).serializeNulls().create();
 
-        LinkedList<String> serializableLocations = new LinkedList<>();
-        for (Location location : locations) {
-            serializableLocations.add(adapter.toJson(location, Location.class));
+        LinkedHashMap<String, BlockFace> serializableLocations = new LinkedHashMap<>();
+        for (Location location : locations.keySet()) {
+            serializableLocations.put(adapter.toJson(location, Location.class), locations.get(location));
         }
         this.locations = serializableLocations;
     }
@@ -62,9 +64,9 @@ public class SerializableLootChest {
             }
         }
 
-        LinkedList<Location> locations = new LinkedList<>();
-        for (String location : this.locations) {
-            locations.add(adapter.fromJson(location, Location.class));
+        LinkedHashMap<Location, BlockFace> locations = new LinkedHashMap<>();
+        for (String location : this.locations.keySet()) {
+            locations.put(adapter.fromJson(location, Location.class), this.locations.get(location));
         }
 
         return new LootChest(this.interval, this.type, loots, locations, this.lootAmount, this.totalWeight, this.id);

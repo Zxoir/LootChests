@@ -10,11 +10,18 @@ import me.zxoir.lootchests.managers.LootChestManager;
 import me.zxoir.lootchests.utils.LootChestsDB;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
+import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
+
+import java.util.Optional;
 
 import static org.bukkit.Material.AIR;
 
@@ -39,6 +46,7 @@ public final class LootChests extends JavaPlugin {
 
         long start = System.currentTimeMillis();
         saveDefaultConfig();
+        //noinspection InstantiationOfUtilityClass
         new LootChestsDB("CREATE TABLE IF NOT EXISTS LootChests(" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "lootchestData text NOT NULL" +
@@ -64,12 +72,39 @@ public final class LootChests extends JavaPlugin {
     public void onDisable() {
         LootChestManager.getLootChests().values().forEach(lootChest -> {
             Block block = lootChest.getSpawnTask().getLastSpawned();
-            if (block != null && block.getType().equals(Material.CHEST)) {
+            if (block != null && block.getType().equals(Material.CHEST) && lootChest.getType().equals(LootChestType.RANDOM)) {
                 ((Chest) block.getState()).getBlockInventory().clear();
                 block.setType(AIR);
             }
         });
+
+        for (Player player : LootChestManager.getEditLocations().keySet()) {
+            LootChest lootChest = LootChestManager.getEditLocations().get(player);
+
+            if (lootChest.getLocations().isEmpty()) continue;
+            if (lootChest.getType().equals(LootChests.LootChestType.NORMAL)) {
+                Optional<Location> firstKey = lootChest.getLocations().keySet().stream().findFirst();
+                if (!firstKey.isPresent()) continue;
+                Block block = firstKey.get().getBlock();
+                BlockData blockData = block.getBlockData();
+                if (blockData instanceof Directional) {
+                    ((Directional) blockData).setFacing(lootChest.getLocations().get(firstKey.get()));
+                    block.setBlockData(blockData);
+                }
+                Chest chest = (Chest) firstKey.get().getBlock();
+                chest.getPersistentDataContainer().set(new NamespacedKey(LootChests.getInstance(), "LootChest"), PersistentDataType.INTEGER, lootChest.getId());
+                chest.update();
+                continue;
+            }
+            for (Location location : lootChest.getLocations().keySet()) {
+                Block block = location.getBlock();
+                if (!block.getType().equals(Material.CHEST)) continue;
+                block.setType(Material.AIR);
+            }
+        }
+
     }
+
 
     public enum LootChestType {
         NORMAL,

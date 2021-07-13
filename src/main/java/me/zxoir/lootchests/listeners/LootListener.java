@@ -65,6 +65,19 @@ public class LootListener implements Listener {
         Chest chest = (Chest) block.getState();
         ItemStack[] contents = chest.getBlockInventory().getContents();
         LootChest lootChest = SpawnTask.getChests().get(block);
+
+        if (LootChestManager.getEditLocations().containsValue(lootChest)) return;
+
+        if (Arrays.stream(contents).allMatch(itemStack -> itemStack == null || itemStack.getType().equals(Material.AIR))) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (lootChest.isClaimed()) {
+            event.setCancelled(true);
+            return;
+        }
+
         LootChestClaimEvent lootChestClaimEvent = new LootChestClaimEvent(player, contents, block, lootChest);
         Bukkit.getPluginManager().callEvent(lootChestClaimEvent);
 
@@ -74,11 +87,10 @@ public class LootListener implements Listener {
         }
 
         player.openInventory(chest.getInventory());
-        if (lootChest == null) return;
         lootChest.setClaimed(true);
         player.sendMessage(colorize("&aYou have claimed a LootChest!"));
         chest.getBlockInventory().clear();
-        block.setType(Material.AIR);
+        if (lootChest.getType().equals(LootChests.LootChestType.RANDOM)) block.setType(Material.AIR);
         Bukkit.getScheduler().runTaskLater(LootChests.getInstance(), () -> player.getOpenInventory().getTopInventory().setContents(lootChestClaimEvent.getContents()), 1);
     }
 
@@ -88,7 +100,16 @@ public class LootListener implements Listener {
         LootsEditorHolder holder = (LootsEditorHolder) event.getInventory().getHolder();
         if (holder.getLootChest() == null || holder.getLoot() == null || holder.isRemove()) return;
 
-        if (Arrays.stream(event.getInventory().getContents()).allMatch(itemStack -> itemStack == null || itemStack.getType().equals(Material.AIR))) return;
+        if (Arrays.stream(event.getInventory().getContents()).allMatch(itemStack -> itemStack == null || itemStack.getType().equals(Material.AIR))) {
+            RemoveLootEvent removeLootEvent = new RemoveLootEvent((Player) event.getPlayer(), holder.getLoot(), holder.getLootChest());
+            Bukkit.getPluginManager().callEvent(removeLootEvent);
+
+            if (removeLootEvent.isCancelled()) return;
+
+            event.getPlayer().sendMessage(colorize("&aLoot successfully removed."));
+            holder.getLootChest().removeLoot(holder.getLoot());
+            return;
+        }
 
         ModifyLootEvent modifyLootEvent = new ModifyLootEvent((Player) event.getPlayer(), holder.getLoot());
         ItemStack[] oldLoot = holder.getLoot().getItemStacks();
@@ -121,7 +142,7 @@ public class LootListener implements Listener {
 
                     player.closeInventory();
                     player.sendMessage(colorize("&aLoot successfully removed."));
-                    holder.getLootChest().getLoots().remove(holder.getLoot());
+                    holder.getLootChest().removeLoot(holder.getLoot());
                 }
                 return;
             }

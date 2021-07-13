@@ -13,17 +13,24 @@ import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
 
 import static me.zxoir.lootchests.utils.Utils.colorize;
 import static me.zxoir.lootchests.utils.Utils.isInteger;
@@ -50,7 +57,7 @@ public class MainCommand implements CommandExecutor {
             return true;
         }
 
-        if (args.length >= 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("normal")) { // Todo: Change the system to not be like random chests
+        if (args.length >= 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("normal")) {
             Long interval = new TimeManager(args[2]).toMilliSecond();
             if (interval == null || interval <= 0) {
                 player.sendMessage(colorize("&cThe interval must be over 0!"));
@@ -60,8 +67,7 @@ public class MainCommand implements CommandExecutor {
             LootChest lootChest = new LootChest(interval, LootChests.LootChestType.NORMAL, 1);
 
             if (LootChestManager.registerLootChest(lootChest)) {
-                TextComponent message = new TextComponent(colorize("&aSuccessfully created a new LootChest with ID " + lootChest.getId() +
-                        "\n&7To set the lootchests location, use &e/lootchest edit " + lootChest.getId()));
+                TextComponent message = new TextComponent(colorize("&aSuccessfully created a new LootChest with ID " + lootChest.getId()));
                 message.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/lootchest edit " + lootChest.getId()));
                 message.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(colorize("&aClick here to run the command"))));
 
@@ -168,9 +174,27 @@ public class MainCommand implements CommandExecutor {
             player.sendMessage(colorize("&aYou are no longer editing a lootchest"));
 
             if (lootChest.getLocations().isEmpty()) return true;
-            for (Location location : lootChest.getLocations()) {
+            if (lootChest.getType().equals(LootChests.LootChestType.NORMAL)) {
+                Optional<Location> firstKey = lootChest.getLocations().keySet().stream().findFirst();
+                if (!firstKey.isPresent()) return true;
+                if (!firstKey.get().getBlock().getType().equals(Material.CHEST)) {
+                    Block block = firstKey.get().getBlock();
+                    firstKey.get().getBlock().setType(Material.CHEST);
+                    BlockData blockData = block.getBlockData();
+                    if (blockData instanceof Directional) {
+                        ((Directional) blockData).setFacing(lootChest.getLocations().get(firstKey.get()));
+                        block.setBlockData(blockData);
+                    }
+                }
+                
+                Chest chest = (Chest) firstKey.get().getBlock().getState();
+                chest.getPersistentDataContainer().set(new NamespacedKey(LootChests.getInstance(), "LootChest"), PersistentDataType.INTEGER, lootChest.getId());
+                chest.update();
+                return true;
+            }
+            for (Location location : lootChest.getLocations().keySet()) {
                 Block block = location.getBlock();
-                if (!block.getType().equals(Material.REDSTONE_BLOCK)) break;
+                if (!block.getType().equals(Material.CHEST)) continue;
                 block.setType(Material.AIR);
             }
         }
@@ -191,10 +215,15 @@ public class MainCommand implements CommandExecutor {
             player.sendMessage(colorize("&7To exit use &e/lootchests edit"));
 
             if (lootChest.getLocations().isEmpty()) return true;
-            for (Location location : lootChest.getLocations()) {
+            for (Location location : lootChest.getLocations().keySet()) {
                 Block block = location.getBlock();
-                if (!block.getType().equals(Material.AIR)) break;
-                block.setType(Material.REDSTONE_BLOCK);
+                if (!block.getType().equals(Material.AIR)) continue;
+                block.setType(Material.CHEST);
+                BlockData blockData = block.getBlockData();
+                if (blockData instanceof Directional) {
+                    ((Directional) blockData).setFacing(lootChest.getLocations().get(location));
+                    block.setBlockData(blockData);
+                }
             }
         }
 
