@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 
 import static me.zxoir.lootchests.utils.Utils.colorize;
@@ -32,7 +33,7 @@ import static org.bukkit.Material.CHEST;
 @SuppressWarnings({"deprecation", "unused"})
 public class LootChestManager {
     @Getter
-    private static final HashMap<Integer, LootChest> lootChests = new HashMap<>();
+    private static final LinkedHashMap<Integer, LootChest> lootChests = new LinkedHashMap<>();
     @Getter
     private static final HashMap<Player, LootChest> editLocations = new HashMap<>();
     private static boolean setup = false;

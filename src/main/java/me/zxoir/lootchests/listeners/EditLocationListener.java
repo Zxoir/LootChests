@@ -71,7 +71,9 @@ public class EditLocationListener implements Listener {
         LootChest lootChest = LootChestManager.getEditLocations().get(player);
 
         if (event.getClickedBlock() == null || !event.getClickedBlock().getType().equals(Material.CHEST)) return;
-        if (lootChest.getLocations().containsKey(event.getClickedBlock().getLocation()) && event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) event.setCancelled(true);
+        if (lootChest.getLocations().containsKey(event.getClickedBlock().getLocation()) && event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler

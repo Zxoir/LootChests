@@ -26,7 +26,9 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
@@ -95,6 +97,18 @@ public class LootListener implements Listener {
     }
 
     @EventHandler
+    public void onClose(InventoryCloseEvent event) {
+        if (event.getInventory().getHolder() == null || !event.getInventory().getHolder().getClass().equals(LootsEditorHolder.class)) return;
+
+        Bukkit.getScheduler().runTaskLater(LootChests.getInstance(), () -> {
+            InventoryView inventory = event.getPlayer().getOpenInventory();
+            if (inventory.getTopInventory().getHolder() == null || !inventory.getTopInventory().getHolder().getClass().equals(LootsEditorHolder.class)) {
+                LootsEditorHolder.getPages().remove(event.getPlayer().getUniqueId());
+            }
+        }, 1L);
+    }
+
+    @EventHandler
     public void onLootModify(InventoryCloseEvent event) {
         if (event.getInventory().getHolder() == null || !event.getInventory().getHolder().getClass().equals(LootsEditorHolder.class)) return;
         LootsEditorHolder holder = (LootsEditorHolder) event.getInventory().getHolder();
@@ -129,12 +143,26 @@ public class LootListener implements Listener {
         LootsEditorHolder holder = (LootsEditorHolder) event.getInventory().getHolder();
         event.setCancelled(true);
 
+        if (event.getCurrentItem().getType().equals(Material.GREEN_DYE)) {
+            if (!LootsEditorHolder.getPages().containsKey(player.getUniqueId()))
+                LootsEditorHolder.getPages().put(player.getUniqueId(), 1);
+            player.openInventory(holder.nextPage(player.getUniqueId()));
+            return;
+        } else if (event.getCurrentItem().getType().equals(Material.RED_DYE)) {
+            if (!LootsEditorHolder.getPages().containsKey(player.getUniqueId()))
+                LootsEditorHolder.getPages().put(player.getUniqueId(), 2);
+
+            player.openInventory(holder.previousPage(player.getUniqueId()));
+            return;
+        }
         if (holder.getLoot() != null) {
             if (holder.isRemove()) {
-                if (event.getCurrentItem().getType().equals(Material.RED_WOOL)) {
+                    if (event.getCurrentItem().getType().equals(Material.RED_WOOL)) {
+                        LootsEditorHolder.getPages().remove(player.getUniqueId());
                     Inventory inventory = new LootsEditorHolder(null, holder.getLootChest(), false).getInventory();
                     player.openInventory(inventory);
                 } else if (event.getCurrentItem().getType().equals(Material.GREEN_WOOL)) {
+                        LootsEditorHolder.getPages().remove(player.getUniqueId());
                     RemoveLootEvent removeLootEvent = new RemoveLootEvent(player, holder.getLoot(), holder.getLootChest());
                     Bukkit.getPluginManager().callEvent(removeLootEvent);
 
@@ -149,6 +177,7 @@ public class LootListener implements Listener {
             event.setCancelled(false);
         } else if (holder.getLootChest() != null) {
             if (!event.getCurrentItem().getType().equals(Material.BOOK)) return;
+            LootsEditorHolder.getPages().remove(player.getUniqueId());
             int id = Integer.parseInt(StringUtils.substringAfter(ChatColor.stripColor(event.getCurrentItem().getItemMeta().getDisplayName()), " "));
             Loot loot = holder.getLootChest().getLoots().get(id);
 
@@ -168,6 +197,7 @@ public class LootListener implements Listener {
             player.openInventory(inventory);
         } else {
             if (!event.getCurrentItem().getType().equals(Material.CHEST)) return;
+            LootsEditorHolder.getPages().remove(player.getUniqueId());
             int id = Integer.parseInt(StringUtils.substringAfter(ChatColor.stripColor(event.getCurrentItem().getItemMeta().getDisplayName()), " "));
             LootChest lootChest = LootChestManager.getLootChests().get(id);
 
@@ -185,6 +215,7 @@ public class LootListener implements Listener {
 
             Inventory inventory = new LootsEditorHolder(null, lootChest, false).getInventory();
             player.openInventory(inventory);
+            LootsEditorHolder.getPages().put(player.getUniqueId(), 1);
         }
 
     }
