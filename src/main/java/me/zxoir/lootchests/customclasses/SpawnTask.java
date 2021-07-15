@@ -65,7 +65,10 @@ public class SpawnTask extends BukkitRunnable {
         }
 
         Location location = (Location) lootChest.getLocations().keySet().toArray()[random.nextInt(lootChest.getLocations().size())];
-        Loot loot = lootChest.generateLoot();
+        List<Loot> loots = new ArrayList<>();
+        for (int i = 0; i < lootChest.getLootAmount(); i++) {
+            loots.add(lootChest.generateLoot());
+        }
         Utils.runTaskSync(() -> {
             if (lastSpawned != null) {
                 if (lastSpawned.getType().equals(Material.CHEST)) {
@@ -83,7 +86,7 @@ public class SpawnTask extends BukkitRunnable {
             Chest chest = (Chest) location.getBlock().getState();
             chest.getPersistentDataContainer().set(new NamespacedKey(LootChests.getInstance(), "LootChest"), PersistentDataType.INTEGER, lootChest.getId());
             chest.update();
-            Arrays.stream(loot.getItemStacks()).filter(item -> item != null && !item.getType().equals(Material.AIR)).forEach(item -> chest.getBlockInventory().addItem(item));
+            loots.forEach(loot -> Arrays.stream(loot.getItemStacks()).filter(item -> item != null && !item.getType().equals(Material.AIR)).forEach(item -> chest.getBlockInventory().addItem(item)));
             chests.remove(lastSpawned);
             chests.put(location.getBlock(), lootChest);
             lastSpawned = location.getBlock();

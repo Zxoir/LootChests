@@ -186,7 +186,7 @@ public class MainCommand implements CommandExecutor {
                         block.setBlockData(blockData);
                     }
                 }
-                
+
                 Chest chest = (Chest) firstKey.get().getBlock().getState();
                 chest.getPersistentDataContainer().set(new NamespacedKey(LootChests.getInstance(), "LootChest"), PersistentDataType.INTEGER, lootChest.getId());
                 chest.update();

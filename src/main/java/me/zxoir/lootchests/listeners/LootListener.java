@@ -15,6 +15,7 @@ import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
@@ -28,9 +29,12 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 import static me.zxoir.lootchests.utils.Utils.colorize;
 
@@ -42,6 +46,7 @@ import static me.zxoir.lootchests.utils.Utils.colorize;
  */
 @SuppressWarnings("deprecation")
 public class LootListener implements Listener {
+    private final HashMap<Player, Chest> lootingPlayers = new HashMap<>();
 
     @EventHandler
     public void onLootSave(InventoryCloseEvent event) {
@@ -63,10 +68,24 @@ public class LootListener implements Listener {
         Player player = event.getPlayer();
         Block block = event.getClickedBlock();
 
-        if (!event.getAction().equals(Action.RIGHT_CLICK_BLOCK) || block == null || !block.getType().equals(Material.CHEST) || !SpawnTask.getChests().containsKey(block)) return;
+        if (!event.getAction().equals(Action.RIGHT_CLICK_BLOCK) || block == null || !block.getType().equals(Material.CHEST)) return;
         Chest chest = (Chest) block.getState();
+        NamespacedKey namespacedKey = new NamespacedKey(LootChests.getInstance(), "LootChest");
+        PersistentDataContainer container = chest.getPersistentDataContainer();
+        LootChest lootChest = null;
+        if (container.has(namespacedKey, PersistentDataType.INTEGER)) {
+            lootChest = LootChestManager.getLootChests().get(container.get(namespacedKey, PersistentDataType.INTEGER));
+            if (LootChestManager.getEditLocations().containsValue(lootChest)) return;
+            if (lootChest.getType().equals(LootChests.LootChestType.NORMAL) && lootChest.getLoots().isEmpty()) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
         ItemStack[] contents = chest.getBlockInventory().getContents();
-        LootChest lootChest = SpawnTask.getChests().get(block);
+        if (lootChest == null && SpawnTask.getChests().containsKey(block))
+            lootChest = SpawnTask.getChests().get(block);
+        else if (lootChest == null) return;
 
         if (LootChestManager.getEditLocations().containsValue(lootChest)) return;
 
@@ -80,6 +99,12 @@ public class LootListener implements Listener {
             return;
         }
 
+        if (lootingPlayers.containsValue(chest)) {
+            event.setCancelled(true);
+            player.sendMessage(colorize("&cThis LootChest is being looted."));
+            return;
+        }
+
         LootChestClaimEvent lootChestClaimEvent = new LootChestClaimEvent(player, contents, block, lootChest);
         Bukkit.getPluginManager().callEvent(lootChestClaimEvent);
 
@@ -88,16 +113,40 @@ public class LootListener implements Listener {
             return;
         }
 
-        player.openInventory(chest.getInventory());
-        lootChest.setClaimed(true);
-        player.sendMessage(colorize("&aYou have claimed a LootChest!"));
-        chest.getBlockInventory().clear();
-        if (lootChest.getType().equals(LootChests.LootChestType.RANDOM)) block.setType(Material.AIR);
-        Bukkit.getScheduler().runTaskLater(LootChests.getInstance(), () -> player.getOpenInventory().getTopInventory().setContents(lootChestClaimEvent.getContents()), 1);
+        if (!LootChests.getInstance().getConfig().getBoolean("full-loot")) {
+            player.openInventory(chest.getInventory());
+            lootChest.setClaimed(true);
+            player.sendMessage(colorize("&aYou have claimed a LootChest!"));
+            chest.getBlockInventory().clear();
+            if (lootChest.getType().equals(LootChests.LootChestType.RANDOM)) block.setType(Material.AIR);
+            Bukkit.getScheduler().runTaskLater(LootChests.getInstance(), () -> player.getOpenInventory().getTopInventory().setContents(lootChestClaimEvent.getContents()), 1);
+            return;
+        }
+
+        lootingPlayers.put(player, chest);
     }
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
+        Player player = (Player) event.getPlayer();
+        if (lootingPlayers.containsKey(player)) {
+            Chest chest = lootingPlayers.get(player);
+            if (chest != null) {
+                if (Arrays.stream(chest.getBlockInventory().getContents()).allMatch(itemStack -> itemStack == null || itemStack.getType().equals(Material.AIR))) {
+                    NamespacedKey namespacedKey = new NamespacedKey(LootChests.getInstance(), "LootChest");
+                    PersistentDataContainer container = chest.getPersistentDataContainer();
+                    if (container.has(namespacedKey, PersistentDataType.INTEGER)) {
+                        LootChest lootChest = LootChestManager.getLootChests().get(container.get(namespacedKey, PersistentDataType.INTEGER));
+                        lootChest.setClaimed(true);
+
+                        if (!lootChest.getType().equals(LootChests.LootChestType.NORMAL))
+                            chest.getBlock().setType(Material.AIR);
+                    }
+                }
+            }
+
+            lootingPlayers.remove(player);
+        }
         if (event.getInventory().getHolder() == null || !event.getInventory().getHolder().getClass().equals(LootsEditorHolder.class)) return;
 
         Bukkit.getScheduler().runTaskLater(LootChests.getInstance(), () -> {
