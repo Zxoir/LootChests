@@ -2,6 +2,11 @@
 no_permission: "&cYou don't have permission to access this command!"
 loot_message: "&aYou have claimed a LootChest!"
 lootchest_looted: "&cThis LootChest is being looted by another player."
+lootchest_status:
+  - "&7&lCurrent status for LootChest %id%:"
+  - "&aLast spawned location: &8%location%"
+  - "&aClaimed: &8%isClaimed%"
+  - "&aDisabled: &8%isDisabled%"
 ############################### OPTIONS #################################################
 # Keeps LootChest until it's fully looted
 full-loot: true

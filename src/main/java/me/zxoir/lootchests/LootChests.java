@@ -7,6 +7,7 @@ import me.zxoir.lootchests.listeners.EditLocationListener;
 import me.zxoir.lootchests.listeners.LootListener;
 import me.zxoir.lootchests.managers.ConfigManager;
 import me.zxoir.lootchests.managers.LootChestManager;
+import me.zxoir.lootchests.tabcompleters.MainCommandCompleter;
 import me.zxoir.lootchests.utils.LootChestsDB;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +32,7 @@ import static org.bukkit.Material.AIR;
  * @author Zxoir
  * @since 7/1/2021
  */
+@SuppressWarnings("ConstantConditions")
 public final class LootChests extends JavaPlugin {
     @Getter
     private static LootChests instance;
@@ -60,6 +62,7 @@ public final class LootChests extends JavaPlugin {
 
         start = System.currentTimeMillis();
         getCommand("lootchests").setExecutor(new MainCommand());
+        getCommand("lootchests").setTabCompleter(new MainCommandCompleter());
         getServer().getPluginManager().registerEvents(new EditLocationListener(), this);
         getServer().getPluginManager().registerEvents(new LootListener(), this);
         lcLogger.info("Loaded commands and listeners in " + (System.currentTimeMillis() - start) + "ms");

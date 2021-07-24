@@ -28,7 +28,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
+import javax.management.remote.JMXServerErrorException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -77,7 +79,7 @@ public class MainCommand implements CommandExecutor {
                 player.sendMessage(colorize("&cFailed to create new LootChest"));
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("status") && isInteger(args[1])) {
+        else if (args.length == 2 && args[0].equalsIgnoreCase("status") && isInteger(args[1])) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
@@ -86,13 +88,19 @@ public class MainCommand implements CommandExecutor {
             LootChest lootChest = LootChestManager.getLootChests().get(id);
             boolean spawnIsNull = lootChest.getSpawnTask().getLastSpawned() == null;
 
-            player.sendMessage(colorize("&7&lCurrent status for LootChest " + lootChest.getId() + "\n" +
-                    "&aLast spawned location: &8" + (spawnIsNull ? "N/A" : locationToString(lootChest.getSpawnTask().getLastSpawned().getLocation())) + "\n" +
-                    "&aClaimed: &8" + lootChest.isClaimed() + "\n" +
-                    "&aDisabled: &8" + lootChest.isDisabled()));
+            String message = String.join("\n", LootChests.getInstance().getConfig().getStringList("lootchest_status"));
+            message = message
+                    .replace("%id%", "" + lootChest.getId())
+                    .replace("%location%", (spawnIsNull ? "N/A" : locationToString(lootChest.getSpawnTask().getLastSpawned().getLocation())))
+                    .replace("%isClaimed%", "" + lootChest.isClaimed())
+                    .replace("%isDisabled%", "" + lootChest.isDisabled());
+            if (message.isEmpty())
+                return true;
+
+            player.sendMessage(colorize(message));
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("enable") && isInteger(args[1])) {
+        else if (args.length == 2 && args[0].equalsIgnoreCase("enable") && isInteger(args[1])) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
@@ -104,7 +112,7 @@ public class MainCommand implements CommandExecutor {
             player.sendMessage(colorize("&aLootChest enabled."));
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("disable") && isInteger(args[1])) {
+        else if (args.length == 2 && args[0].equalsIgnoreCase("disable") && isInteger(args[1])) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
@@ -121,7 +129,7 @@ public class MainCommand implements CommandExecutor {
             player.sendMessage(colorize("&cLootChest disabled."));
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("forceSpawn") && isInteger(args[1])) {
+        else if (args.length == 2 && args[0].equalsIgnoreCase("forceSpawn") && isInteger(args[1])) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
@@ -133,7 +141,7 @@ public class MainCommand implements CommandExecutor {
             player.sendMessage(colorize("&aLootChest has been spawned."));
         }
 
-        if (args.length == 1 && args[0].equalsIgnoreCase("list")) {
+        else if (args.length == 1 && args[0].equalsIgnoreCase("list")) {
             if (LootChestManager.getLootChests().isEmpty()) {
                 player.sendMessage(colorize("&cThere aren't any LootChests available."));
                 return true;
@@ -143,7 +151,7 @@ public class MainCommand implements CommandExecutor {
             LootChestManager.getLootChests().values().forEach(lootChest -> player.sendMessage(colorize("&7- &a" + lootChest.getId())));
         }
 
-        if (args.length == 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("random")) {
+        else if (args.length == 3 && args[0].equalsIgnoreCase("create") && args[1].equalsIgnoreCase("random")) {
             Long interval = new TimeManager(args[2]).toMilliSecond();
             if (interval == null || interval <= 0) {
                 player.sendMessage(colorize("&cThe interval must be over 0!"));
@@ -164,7 +172,7 @@ public class MainCommand implements CommandExecutor {
                 player.sendMessage(colorize("&cFailed to create new LootChest"));
         }
 
-        if (args.length == 1 && args[0].equalsIgnoreCase("edit")) {
+        else if (args.length == 1 && args[0].equalsIgnoreCase("edit")) {
             if (!LootChestManager.getEditLocations().containsKey(player)) {
                 player.sendMessage(colorize("&cYou must edit a lootchest using &e/lootchest edit <id>"));
                 return true;
@@ -199,7 +207,7 @@ public class MainCommand implements CommandExecutor {
             }
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("edit") && isInteger(args[1])) {
+        else if (args.length == 2 && args[0].equalsIgnoreCase("edit") && isInteger(args[1])) {
             if (LootChestManager.getEditLocations().containsKey(player)) {
                 player.sendMessage(colorize("&cYou are already editing a LootChest, to exit use &e/lootchests edit"));
             }
@@ -227,7 +235,7 @@ public class MainCommand implements CommandExecutor {
             }
         }
 
-        if (args.length == 4 && args[0].equalsIgnoreCase("edit") && isInteger(args[1]) && args[2].equalsIgnoreCase("lootamount") && isInteger(args[3])) {
+        else if (args.length == 4 && args[0].equalsIgnoreCase("edit") && isInteger(args[1]) && args[2].equalsIgnoreCase("lootamount") && isInteger(args[3])) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
@@ -244,7 +252,7 @@ public class MainCommand implements CommandExecutor {
             lootChest.setLootAmount(amount);
         }
 
-        if (args.length == 4 && args[0].equalsIgnoreCase("edit") && isInteger(args[1]) && args[2].equalsIgnoreCase("interval")) {
+        else if (args.length == 4 && args[0].equalsIgnoreCase("edit") && isInteger(args[1]) && args[2].equalsIgnoreCase("interval")) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
@@ -262,7 +270,7 @@ public class MainCommand implements CommandExecutor {
             lootChest.setInterval(interval);
         }
 
-        if (args.length == 3 && args[0].equalsIgnoreCase("edit") && isInteger(args[1]) && args[2].equalsIgnoreCase("loot")) {
+        else if (args.length == 3 && args[0].equalsIgnoreCase("edit") && isInteger(args[1]) && args[2].equalsIgnoreCase("loot")) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
@@ -274,7 +282,7 @@ public class MainCommand implements CommandExecutor {
             player.openInventory(lootsEditorHolder.getInventory());
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("edit") && args[1].equalsIgnoreCase("loots")) {
+        else if (args.length == 2 && args[0].equalsIgnoreCase("edit") && args[1].equalsIgnoreCase("loots")) {
             if (LootChestManager.getLootChests().isEmpty()) {
                 player.sendMessage(colorize("&cThere aren't any LootChests"));
                 return true;
@@ -284,7 +292,7 @@ public class MainCommand implements CommandExecutor {
             player.openInventory(lootsEditorHolder.getInventory());
         }
 
-        if (args.length == 3 && args[0].equalsIgnoreCase("addloot") && isInteger(args[1]) && isInteger(args[2])) {
+        else if (args.length == 3 && args[0].equalsIgnoreCase("addloot") && isInteger(args[1]) && isInteger(args[2])) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
@@ -296,7 +304,7 @@ public class MainCommand implements CommandExecutor {
             player.openInventory(inventory);
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("delete") && isInteger(args[1])) {
+        else if (args.length == 2 && args[0].equalsIgnoreCase("delete") && isInteger(args[1])) {
             int id = Integer.parseInt(args[1]);
             if (!LootChestManager.getLootChests().containsKey(id)) {
                 player.sendMessage(colorize("&cThat's an invalid ID."));
@@ -306,6 +314,30 @@ public class MainCommand implements CommandExecutor {
             LootChest lootChest = LootChestManager.getLootChests().get(id);
             lootChest.delete();
             player.sendMessage(colorize("&aLootChest successfully deleted."));
+        }
+
+        else if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+            LootChests.getInstance().reloadConfig();
+            player.sendMessage(colorize("&aSuccessfully reloaded Config."));
+        }
+
+        else {
+            player.sendMessage(colorize("&3[&bLootChest&3] &7List of commands:\n" +
+                    "&e- &8/lootchests status <id>" +
+                    "&e- &8/lootchests disable <id>" +
+                    "&e- &8/lootchests enable <id>" +
+                    "&e- &8/lootchests list" +
+                    "&e- &8/lootchests forceSpawn <id>" +
+                    "&e- &8/lootchests delete <id>" +
+                    "&e- &8/lootchests create normal <id> <interval>" +
+                    "&e- &8/lootchests create random <id> <interval>" +
+                    "&e- &8/lootchests addloot <id> <chance>" +
+                    "&e- &8/lootchests edit <id>" +
+                    "&e- &8/lootchests edit <id> lootamount <amount>" +
+                    "&e- &8/lootchests edit <id> interval <interval>" +
+                    "&e- &8/lootchests edit <id> loot" +
+                    "&e- &8/lootchests edit loots" +
+                    "&e- &8/lootchests reload"));
         }
 
         return true;
